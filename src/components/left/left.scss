@@ -1,0 +1,25 @@
+.left {
+	float: left;
+	width: 570px;
+	height: 600px;
+	border-right: 1px solid #888;
+}
+
+.boxR {
+  float: right;
+  width: 370px;
+  margin-top: 5px;
+}
+.boxL {
+  float: left;
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  justify-content: flex-end;
+  width: 195px;
+}
+
+.item {
+  height: 21px;
+  margin-bottom: 20px;
+}
