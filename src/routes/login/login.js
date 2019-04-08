@@ -2,33 +2,59 @@ import React from 'react';
 import { Tabs, Input, Button, Form, Icon, message } from 'antd';
 import classNames from 'classnames';
 import { query } from '../../services/service';
+import statuCode from '../../utils/response';
+import PropTypes from 'prop-types';
 import s from './login.scss';
 
 const TabPane = Tabs.TabPane;
 const FormItem = Form.Item;
 
 class Login extends React.Component {
+  static contextTypes = {
+    router: PropTypes.object.isRequired,
+  }
+
 	constructor(props){
 		super(props);
 		this.state = {
-			regID: '',
-			regName: '',
-			regPassword: '',
 		}
-	}
+  }
 
   handleSubmit = (e) => {
     e.preventDefault();
     this.props.form.validateFields(['id','password'],(err, values) => {
       if (!err) {
-        console.log('Received values of form: ', values);
+        const { id, password } = values;
+        query({
+          url: 'http://localhost:3000/login',
+          body: {
+            id: id,
+            password,
+          },
+        }).then(this.loginChat, this.onReject)
       }
     });
   }
 
+  loginChat = data => {
+    console.log(data.code, statuCode.successCode);
+    const { history } = this.context.router;
+    if (data.code === statuCode.successCode) {
+      console.log(history)
+      const state = {
+        loginStatu: true,
+        key: history.location.key,
+      };
+      history.push({pathname: '/chat', state});
+    }
+    else  message.error(data.msg);
+  }
+
   onResolve = data => {
-    console.log(data);
-    message.success(data.msg);
+    console.log(data.code, statuCode.successCode);
+    if (data.code === statuCode.successCode) 
+      message.success(data.msg);
+    else  message.error(data.msg);
   }
 
   onReject = err => {
@@ -41,7 +67,7 @@ class Login extends React.Component {
       if (!err) {
         const { regID, regName, regPassword } = values;
         query({
-          url: 'http://localhost:3000/login',
+          url: 'http://localhost:3000/register',
           body: {
             regID,
             regName,

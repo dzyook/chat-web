@@ -22,24 +22,14 @@ class Example extends React.Component{
   
   UNSAFE_componentWillMount() {
     const { history } = this.context.router;
-    history.replace("/login");
+    // history.replace("/login");
   }
 
 	componentDidMount() {
     const { socket, dispatch } = this.props;
-    this._isMounted = false
-    if(this._isMounted) {
-      socket.on('disUser', (num) => {
-        this.showNum(num);
-      });
-      dispatch({
-        type: 'example/fetch',
-        payload: {
-          url: 'http://localhost:3000',
-          body: { a: 1 },
-        },
-     })
-    }
+    socket.on('disUser', (num) => {
+      this.showNum(num);
+    });
   };
   
   componentWillUnmount() {
