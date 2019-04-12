@@ -1,14 +1,27 @@
 var express = require('express');
 var app = express();
 var path = require("path");
+var md5 = require('md5-node');
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
-
+const MongoClient = require('mongodb').MongoClient;
 // var bodyParser = require("body-parser")
 
-const users = [];
-const chatRecord = [];
-const nowLogin = [];
+const url = 'mongodb://localhost:27017';
+// Database Name
+const dbName = 'test1';
+// Use connect method to connect to the server
+MongoClient.connect(url, { useNewUrlParser: true } ,function(err, client) {
+  if(err){
+    console.log(err);
+  }
+  console.log("connect successful");
+  db = client.db(dbName);
+});
+
+// let users = []; // 注册人数
+const chatRecord = []; 
+const nowLogin = []; // 目前登陆人数
 
 function reqOptions(name) {
   app.options(name, function (req, res) {
@@ -43,8 +56,7 @@ io.sockets.on('connection', function(socket) {
 	});
 	
 	socket.on('disconnect',() => {
-		num--; 
-		io.emit('disUser', num);
+		// io.emit('disUser', num);
 	});
 	
 });
@@ -54,6 +66,7 @@ app.get('/',  function (req, res) {
 	return res.send('hello world');
 });
 
+// 注册接口
 reqOptions('/register');
 app.post('/register', function (req, res) {
   if(req.headers.origin) {
@@ -73,16 +86,26 @@ app.post('/register', function (req, res) {
     })
     req.on("end",function(){
       let data = JSON.parse(str);
-      if(users.findIndex(i => i.regID === data.datas.regID) > -1) {
-        people.code = 's0001';
-        people.msg = '此账号已经存在';
-      }
-      else users.push(data.datas);
-      res.end(JSON.stringify(people));
+      const col = db.collection('chatlist');
+      col.find().toArray((err, users) => {
+        if(users.findIndex(i => i.regID === data.datas.regID) > -1) {
+          people.code = 's0001';
+          people.msg = '此账号已经存在';
+        }
+        else {
+          db.collection('chatlist', {safe: true}, function(err, collection) {
+            data.datas.regPassword = md5(data.datas.regPassword);
+            data.datas.isactive = 0;
+            collection.insertOne(data.datas, {safe: true}, function(err, result){})
+          })
+        };
+        res.end(JSON.stringify(people));
+      });
     })
   }
 });
 
+// 登陆接口
 reqOptions('/login');
 app.post('/login', function(req, res) {
   if(req.headers.origin) {
@@ -102,15 +125,26 @@ app.post('/login', function(req, res) {
     })
     req.on("end",function(){
       let data = JSON.parse(str);
-      console.log(users.findIndex(i => (i.regID === data.datas.id && i.regPassword === data.datas.password)) === -1)
-      if(users.findIndex(i => (i.regID === data.datas.id && i.regPassword === data.datas.password)) === -1) {
-        people.code = 's0001';
-        people.msg = '账号或密码错误';
-      }
-      else {
-        if(nowLogin.findIndex(i => i.regID === data.datas.id) === -1) nowLogin.push(data.datas)
-      }
-      res.end(JSON.stringify(people));
+      const col = db.collection('chatlist');
+      col.find().toArray((err, users) => {
+        if(users.findIndex(i => (i.regID === data.datas.id && i.regPassword === md5(data.datas.password))) === -1) {
+          people.code = 's0001';
+          people.msg = '账号或密码错误';
+        }
+        else {
+          db.collection('chatlist', {safe: true}, function(err, collection) {
+            collection.updateOne({regID: data.datas.id}, {$set: {isactive: 1}}, {safe: true}, function(err, res){
+              console.log(res)
+            })
+          })
+          // const fri = db.collection('friendsList');
+          
+          // fri.find({regID: '111111'}).toArray((err, res) =>{
+          //   console.log(res)
+          // })
+        }
+        res.end(JSON.stringify(people));
+      })
     })
   }
 })

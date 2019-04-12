@@ -82,7 +82,15 @@ class Login extends React.Component {
 		return e => {
 			this.setState({ [key]: e.target.value });
 		}
-	};
+  };
+  
+  checkNumber = (rule, value, callback) => {
+    if(Number(value) >= 0 && value.length >= 6 && value.length <= 12) {
+      callback();
+      return;
+    }
+    callback('请输入6~12位数字ID');
+  }
 
 	login = () => {
     const { getFieldDecorator } = this.props.form;
@@ -90,7 +98,7 @@ class Login extends React.Component {
 			<Form  onSubmit={this.handleSubmit} className={s.login}>
 				<FormItem>
           {getFieldDecorator('id', {
-            rules: [{ required: true, message: 'Please input your id!' }],
+            rules: [{ required: true, message: 'Please input your number id!' }],
           })(
             <Input 
               className={s.loginNum}
@@ -125,8 +133,7 @@ class Login extends React.Component {
       <Form onSubmit={this.getRegister} className={s.login}>
 				<FormItem>
           {getFieldDecorator('regID', {
-            rules: [{ required: true, message: 'Please input your userID!' },
-            { max: 12, message: '不能超过12位' }],
+            rules: [{validator: this.checkNumber}],
           })(
             <Input 
               className={s.loginNum}
